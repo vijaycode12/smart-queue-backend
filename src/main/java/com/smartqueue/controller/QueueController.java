@@ -35,28 +35,29 @@ public class QueueController {
         return queueService.getAllQueues();
     }
     
- // PUT /queue/update-status/{id}?status=INACTIVE
-//    @PutMapping("/update-status/{id}")
-//    public ResponseEntity<?> updateStatus(
-//            @PathVariable Long id,
-//            @RequestParam String status,
-//            @RequestHeader String role) {
-//        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
-//        return queueRepository.findById(id).map(q -> {
-//            q.setStatus(status);
-//            queueRepository.save(q);
-//            return ResponseEntity.ok(q);
-//        }).orElse(ResponseEntity.notFound().build());
-//    }
-//
-//    // DELETE /queue/delete/{id}
-//    @DeleteMapping("/delete/{id}")
-//    public ResponseEntity<?> deleteQueue(
-//            @PathVariable Long id,
-//            @RequestHeader String role) {
-//        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
-//        if (!queueRepository.existsById(id)) return ResponseEntity.notFound().build();
-//        queueRepository.deleteById(id);
-//        return ResponseEntity.ok("Queue deleted");
-//    }
+    @PutMapping("/status/{id}")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id,
+                                           @RequestParam String status,
+                                           @RequestHeader("role") String role) {
+        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
+        try {
+            Queue updated = queueService.updateStatus(id, status);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+ 
+    // Delete queue — ADMIN only
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteQueue(@PathVariable Long id,
+                                          @RequestHeader("role") String role) {
+        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
+        try {
+            queueService.deleteQueue(id);
+            return ResponseEntity.ok("Queue deleted successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
 }
