@@ -69,7 +69,7 @@ public class QueueService {
 //        queueRepository.saveAll(remaining);
 //    }
     
-    @Scheduled(cron = "0 0 18 * * *", zone = "Asia/Kolkata")
+    @Scheduled(cron = "0 0 22 * * *", zone = "Asia/Kolkata")
     @Transactional
     public void autoInactiveAt6PM() {
         List<Queue> queues = queueRepository.findActiveOrPaused();
@@ -77,6 +77,6 @@ public class QueueService {
             q.setStatus("INACTIVE");
         }
         queueRepository.saveAll(queues);
-        System.out.println("[SmartQueue] 6:00 PM — All active queues set to INACTIVE automatically.");
+        System.out.println("[SmartQueue] 10:00 PM — All active queues set to INACTIVE automatically.");
     }
 }

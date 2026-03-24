@@ -2,6 +2,8 @@ package com.smartqueue.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -20,12 +22,14 @@ public class Token {
 
     private LocalDateTime completedAt;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="queue_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Queue queue;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="user_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     public Token() {}

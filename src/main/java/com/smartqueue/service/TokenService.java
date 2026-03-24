@@ -5,7 +5,9 @@ import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.smartqueue.model.Queue;
 import com.smartqueue.model.Token;
@@ -56,12 +58,18 @@ public class TokenService {
         return tokenRepository.findByStatus("WAITING");
     }
 
+ // ── NEW: Get all tokens belonging to a specific user ──
+    public List<Token> getTokensByUser(Long userId) {
+        return tokenRepository.findByUserId(userId);
+    }
+ 
+    
     // Complete Token - only if SERVING
     public Token completeToken(Long id) {
         Token token = tokenRepository.findById(id).orElse(null);
         if (token != null && token.getStatus().equals("SERVING")) {
             token.setStatus("COMPLETED");
-            token.setCompletedAt(LocalDateTime.now());
+            token.setCompletedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
             return tokenRepository.save(token);
         }
         return null;
@@ -146,5 +154,66 @@ public class TokenService {
         }
 
         return "Estimated wait time: " + waitTime + " minutes (" + peopleAhead + " people ahead)";
+    }
+    
+    @Scheduled(cron = "0 0 * * * *", zone = "Asia/Kolkata") // every hour on the hour
+    @Transactional
+    public void autoDeleteExpiredTokens() {
+        LocalDateTime cutoff = LocalDateTime.now(ZoneId.of("Asia/Kolkata")).minusHours(24);
+ 
+        // Step 1: Find which queues will be affected BEFORE deleting
+        List<Long> affectedQueueIds = tokenRepository.findQueueIdsWithExpiredTokens(cutoff);
+ 
+        if (affectedQueueIds.isEmpty()) {
+            System.out.println("[SmartQueue] Token cleanup: nothing to delete.");
+            return;
+        }
+ 
+        // Step 2: Find and delete expired completed tokens
+        List<Token> expired = tokenRepository.findCompletedOlderThan(cutoff);
+        int count = expired.size();
+        tokenRepository.deleteAll(expired);
+        System.out.println("[SmartQueue] Token cleanup: deleted " + count + " completed token(s) older than 24h.");
+ 
+        // Step 3: Resequence token numbers in each affected queue
+        for (Long queueId : affectedQueueIds) {
+            resequenceTokenNumbers(queueId);
+        }
+ 
+        System.out.println("[SmartQueue] Token resequencing complete for " + affectedQueueIds.size() + " queue(s).");
+    }
+ 
+    /**
+     * Resequences all remaining tokens in a queue by tokenNumber starting from 1.
+     * Preserves original order — only renumbers.
+     *
+     * Example queue state after deletion:
+     *   DB rows: tokenNumber=2 (WAITING), tokenNumber=3 (WAITING)
+     *   After resequence: tokenNumber=1 (WAITING), tokenNumber=2 (WAITING)
+     */
+    @Transactional
+    public void resequenceTokenNumbers(Long queueId) {
+        List<Token> remaining = tokenRepository.findAllByQueueIdOrderByTokenNumber(queueId);
+        for (int i = 0; i < remaining.size(); i++) {
+            remaining.get(i).setTokenNumber(i + 1);
+        }
+        tokenRepository.saveAll(remaining);
+    }
+ 
+    // ─────────────────────────────────────────────
+    // MANUAL TRIGGER (for testing / admin use)
+    // ─────────────────────────────────────────────
+    @Transactional
+    public String manualCleanup() {
+        LocalDateTime cutoff = LocalDateTime.now(ZoneId.of("Asia/Kolkata")).minusHours(24);
+        List<Long> affectedQueueIds = tokenRepository.findQueueIdsWithExpiredTokens(cutoff);
+        List<Token> expired = tokenRepository.findCompletedOlderThan(cutoff);
+        int count = expired.size();
+        if (count == 0) return "No completed tokens older than 24h found.";
+        tokenRepository.deleteAll(expired);
+        for (Long queueId : affectedQueueIds) {
+            resequenceTokenNumbers(queueId);
+        }
+        return "Deleted " + count + " token(s) and resequenced " + affectedQueueIds.size() + " queue(s).";
     }
 }

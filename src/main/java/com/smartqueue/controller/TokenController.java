@@ -52,6 +52,16 @@ public class TokenController {
         return tokenService.getWaitingTokens();
     }
 
+ // ── NEW: Get all tokens for a specific user — used by UserDashboard on login ──
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getTokensByUser(@PathVariable Long userId,
+                                              @RequestHeader("userId") Long requestingUserId) {
+        // Users can only see their own tokens
+        if (!userId.equals(requestingUserId))
+            return ResponseEntity.status(403).body("Access denied");
+        return ResponseEntity.ok(tokenService.getTokensByUser(userId));
+    }
+    
     // ADMIN - Complete Token
     @PutMapping("/complete/{id}")
     public ResponseEntity<?> completeToken(
@@ -126,5 +136,12 @@ public class TokenController {
     @GetMapping("/wait-time/{tokenId}")
     public ResponseEntity<?> getEstimatedWaitTime(@PathVariable Long tokenId) {
         return ResponseEntity.ok(tokenService.getEstimatedWaitTime(tokenId));
+    }
+    
+    @PostMapping("/cleanup")
+    public ResponseEntity<?> manualCleanup(@RequestHeader("role") String role) {
+        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
+        String result = tokenService.manualCleanup();
+        return ResponseEntity.ok(result);
     }
 }
