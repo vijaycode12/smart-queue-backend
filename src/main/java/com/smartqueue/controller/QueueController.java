@@ -49,15 +49,15 @@ public class QueueController {
     }
  
     // Delete queue — ADMIN only
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteQueue(@PathVariable Long id,
-                                          @RequestHeader("role") String role) {
-        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
-        try {
-            queueService.deleteQueue(id);
-            return ResponseEntity.ok("Queue deleted successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
-    }
+//    @DeleteMapping("/delete/{id}")
+//    public ResponseEntity<?> deleteQueue(@PathVariable Long id,
+//                                          @RequestHeader("role") String role) {
+//        if (!"ADMIN".equals(role)) return ResponseEntity.status(403).body("Access denied");
+//        try {
+//            queueService.deleteQueue(id);
+//            return ResponseEntity.ok("Queue deleted successfully");
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.status(404).body(e.getMessage());
+//        }
+//    }
 }

@@ -52,22 +52,22 @@ public class QueueService {
     }
  
     // Delete a queue by ID
-    @Transactional
-    public void deleteQueue(Long id) {
-        if (!queueRepository.existsById(id)) {
-            throw new RuntimeException("Queue not found with id: " + id);
-        }
- 
-        // Delete the queue
-        queueRepository.deleteById(id);
- 
-        // Re-sequence all remaining queues by displayId order
-        List<Queue> remaining = queueRepository.findAllByOrderByDisplayIdAsc();
-        for (int i = 0; i < remaining.size(); i++) {
-            remaining.get(i).setDisplayId(i + 1);
-        }
-        queueRepository.saveAll(remaining);
-    }
+//    @Transactional
+//    public void deleteQueue(Long id) {
+//        if (!queueRepository.existsById(id)) {
+//            throw new RuntimeException("Queue not found with id: " + id);
+//        }
+// 
+//        // Delete the queue
+//        queueRepository.deleteById(id);
+// 
+//        // Re-sequence all remaining queues by displayId order
+//        List<Queue> remaining = queueRepository.findAllByOrderByDisplayIdAsc();
+//        for (int i = 0; i < remaining.size(); i++) {
+//            remaining.get(i).setDisplayId(i + 1);
+//        }
+//        queueRepository.saveAll(remaining);
+//    }
     
     @Scheduled(cron = "0 0 18 * * *", zone = "Asia/Kolkata")
     @Transactional
