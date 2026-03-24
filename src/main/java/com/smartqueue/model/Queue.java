@@ -1,5 +1,7 @@
 package com.smartqueue.model;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,7 +20,9 @@ public class Queue {
 	
 	private String status;
 	
-	private String createdAt;
+	private Integer displayId;
+	
+	private LocalDateTime createdAt;
 	
 	public Queue() {
 		
@@ -48,12 +52,20 @@ public class Queue {
 		this.status = status;
 	}
 
-	public String getCreatedAt() {
+	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(String createdAt) {
+	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
+	}
+
+	public Integer getDisplayId() {
+		return displayId;
+	}
+
+	public void setDisplayId(Integer displayId) {
+		this.displayId = displayId;
 	}
 	
 	

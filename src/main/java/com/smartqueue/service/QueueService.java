@@ -1,10 +1,13 @@
 package com.smartqueue.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.smartqueue.model.Queue;
 import com.smartqueue.repository.QueueRepository;
@@ -17,7 +20,16 @@ public class QueueService {
 
     public Queue createQueue(Queue queue){
 
-        queue.setCreatedAt(LocalDateTime.now().toString());
+    	queue.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
+    	
+    	if (queue.getStatus() == null || queue.getStatus().isEmpty()) {
+            queue.setStatus("ACTIVE");
+        }
+ 
+        // Assign next displayId
+        Integer maxId = queueRepository.findMaxDisplayId();
+        queue.setDisplayId(maxId == null ? 1 : maxId + 1);
+        
 
         return queueRepository.save(queue);
     }
@@ -40,10 +52,31 @@ public class QueueService {
     }
  
     // Delete a queue by ID
+    @Transactional
     public void deleteQueue(Long id) {
         if (!queueRepository.existsById(id)) {
             throw new RuntimeException("Queue not found with id: " + id);
         }
+ 
+        // Delete the queue
         queueRepository.deleteById(id);
+ 
+        // Re-sequence all remaining queues by displayId order
+        List<Queue> remaining = queueRepository.findAllByOrderByDisplayIdAsc();
+        for (int i = 0; i < remaining.size(); i++) {
+            remaining.get(i).setDisplayId(i + 1);
+        }
+        queueRepository.saveAll(remaining);
+    }
+    
+    @Scheduled(cron = "0 0 18 * * *", zone = "Asia/Kolkata")
+    @Transactional
+    public void autoInactiveAt6PM() {
+        List<Queue> queues = queueRepository.findActiveOrPaused();
+        for (Queue q : queues) {
+            q.setStatus("INACTIVE");
+        }
+        queueRepository.saveAll(queues);
+        System.out.println("[SmartQueue] 6:00 PM — All active queues set to INACTIVE automatically.");
     }
 }
