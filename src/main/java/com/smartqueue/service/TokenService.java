@@ -1,6 +1,7 @@
 package com.smartqueue.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class TokenService {
         token.setUser(user);
         token.setTokenNumber(nextToken);
         token.setStatus("WAITING");
-        token.setCreatedAt(LocalDateTime.now());
+        token.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Kolkata")));
 
         return tokenRepository.save(token);
     }
@@ -71,7 +72,7 @@ public class TokenService {
         Token token = tokenRepository.findById(id).orElse(null);
         if (token != null && token.getStatus().equals("SERVING")) {
             token.setStatus("NO_SHOW");
-            token.setCompletedAt(LocalDateTime.now());
+            token.setCompletedAt(LocalDateTime.now((ZoneId.of("Asia/Kolkata"))));
             return tokenRepository.save(token);
         }
         return null;
